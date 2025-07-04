@@ -4,6 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const roomRoutes = require('./routes/roomRoutes');
 const socketHandler = require('./socket/socketHandler');
+require('dotenv').config(); // Load .env variables
 
 const app = express();
 const server = http.createServer(app);
@@ -17,22 +18,22 @@ const io = require('socket.io')(server, {
 });
 
 // Middlewares
-app.use(cors());              // Allow all origins
-app.use(express.json());      // Parse JSON bodies
+app.use(cors());
+app.use(express.json());
 
 // Routes
 app.use('/api/rooms', roomRoutes);
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/whiteboard')
-  .then(() => console.log('✅ MongoDB connected'))
+// MongoDB connection using .env URI
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB Atlas connected successfully'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// Socket.io handler
+// Socket.io logic
 socketHandler(io);
 
-// Server listen
-const PORT = process.env.PORT || 5001; // 🔁 Use 5000 to match frontend
+// Start server
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
