@@ -6,56 +6,60 @@ const RoomJoin = ({ onJoin }) => {
   const [error, setError] = useState('');
 
   const handleJoin = async () => {
-    if (!roomCode) return;
+    if (!roomCode.trim()) return;
+
     try {
-      await axios.post('http://localhost:5001/api/rooms/join', { roomId: roomCode });
+      // ✅ Switch between local and production URLs
+      const apiURL =
+        process.env.REACT_APP_API_BASE_URL ||
+        'https://whiteboard-development.onrender.com';
+
+      await axios.post(`${apiURL}/api/rooms/join`, { roomId: roomCode });
       onJoin(roomCode);
     } catch (err) {
+      console.error('Failed to join room:', err);
       setError('Error joining room. Please try again.');
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <h2 style={styles.heading}>Join Whiteboard</h2>
+    <div style={styles.container}>
+      <h2 style={styles.heading}>Enter Room Code</h2>
       <input
-        style={styles.input}
         value={roomCode}
         onChange={(e) => setRoomCode(e.target.value)}
-        placeholder="Enter Room Code"
+        placeholder="e.g. AB12CD"
+        style={styles.input}
       />
-      <button style={styles.button} onClick={handleJoin}>Join</button>
+      <button onClick={handleJoin} style={styles.button}>Join Room</button>
       {error && <p style={styles.error}>{error}</p>}
     </div>
   );
 };
 
 const styles = {
-  wrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginTop: '15vh',
-    gap: '1rem',
+  container: {
+    textAlign: 'center',
+    marginTop: '100px',
+    fontFamily: 'Arial, sans-serif',
   },
   heading: {
-    fontSize: '2rem',
-    color: '#333',
+    fontSize: '24px',
+    marginBottom: '16px',
   },
   input: {
     padding: '10px',
-    fontSize: '1rem',
-    width: '250px',
-    borderRadius: '5px',
+    width: '200px',
+    marginRight: '10px',
     border: '1px solid #ccc',
+    borderRadius: '6px',
   },
   button: {
-    padding: '10px 20px',
-    fontSize: '1rem',
-    backgroundColor: '#007bff',
-    color: '#fff',
+    padding: '10px 16px',
+    backgroundColor: '#007BFF',
     border: 'none',
-    borderRadius: '5px',
+    color: 'white',
+    borderRadius: '6px',
     cursor: 'pointer',
   },
   error: {
