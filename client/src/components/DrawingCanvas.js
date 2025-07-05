@@ -5,21 +5,22 @@ const DrawingCanvas = ({ color = 'black', strokeWidth = 2, onClear, socket, room
   const contextRef = useRef(null);
   const [drawing, setDrawing] = useState(false);
 
-  // 1️⃣ Setup canvas ONCE (don't include color/strokeWidth to avoid clearing)
+  // Initialize canvas
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.width = window.innerWidth * 2;
-    canvas.height = window.innerHeight * 2;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
+  const canvas = canvasRef.current;
+  canvas.width = window.innerWidth * 2;
+  canvas.height = window.innerHeight * 2;
+  canvas.style.width = `${window.innerWidth}px`;
+  canvas.style.height = `${window.innerHeight}px`;
 
-    const context = canvas.getContext('2d');
-    context.scale(2, 2);
-    context.lineCap = 'round';
-    contextRef.current = context;
-  }, []);
+  const context = canvas.getContext('2d');
+  context.scale(2, 2);
+  context.lineCap = 'round';
+  contextRef.current = context;
+}, []); // ✅ clean now
 
-  // 2️⃣ Update brush color & width without resetting canvas
+
+  // Update color & stroke dynamically
   useEffect(() => {
     if (contextRef.current) {
       contextRef.current.strokeStyle = color;
@@ -27,25 +28,27 @@ const DrawingCanvas = ({ color = 'black', strokeWidth = 2, onClear, socket, room
     }
   }, [color, strokeWidth]);
 
-  // 3️⃣ Handle incoming socket events
+  // Socket drawing listeners
   useEffect(() => {
     if (!socket) return;
 
-    const ctx = contextRef.current;
-
     const handleDrawStart = ({ x, y }) => {
+      const ctx = contextRef.current;
       ctx.beginPath();
       ctx.moveTo(x, y);
     };
 
     const handleDrawMove = ({ x, y, color, strokeWidth }) => {
+      const ctx = contextRef.current;
       ctx.strokeStyle = color;
       ctx.lineWidth = strokeWidth;
       ctx.lineTo(x, y);
       ctx.stroke();
     };
 
-    const handleClear = () => clearCanvas();
+    const handleClear = () => {
+      clearCanvas();
+    };
 
     socket.on('draw-start', handleDrawStart);
     socket.on('draw-move', handleDrawMove);
@@ -58,35 +61,47 @@ const DrawingCanvas = ({ color = 'black', strokeWidth = 2, onClear, socket, room
     };
   }, [socket]);
 
-  // 4️⃣ Mouse event handlers
+  // Start drawing
   const startDrawing = ({ nativeEvent }) => {
     const { offsetX, offsetY } = nativeEvent;
     contextRef.current.beginPath();
     contextRef.current.moveTo(offsetX, offsetY);
     setDrawing(true);
+
     socket?.emit('draw-start', { x: offsetX, y: offsetY, roomId });
   };
 
+  // Draw on canvas
   const draw = ({ nativeEvent }) => {
     if (!drawing) return;
     const { offsetX, offsetY } = nativeEvent;
+
     contextRef.current.lineTo(offsetX, offsetY);
     contextRef.current.stroke();
-    socket?.emit('draw-move', { x: offsetX, y: offsetY, color, strokeWidth, roomId });
+
+    socket?.emit('draw-move', {
+      x: offsetX,
+      y: offsetY,
+      color,
+      strokeWidth,
+      roomId,
+    });
   };
 
+  // Finish drawing
   const finishDrawing = () => {
+    if (!drawing) return;
     contextRef.current.closePath();
     setDrawing(false);
   };
 
-  // 5️⃣ Clear canvas utility
+  // Clear canvas locally
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     contextRef.current.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  // 6️⃣ Expose clear to parent via ref
+  // Assign clear handler to ref from parent
   useEffect(() => {
     if (onClear) {
       onClear.current = () => {
@@ -110,8 +125,6 @@ const DrawingCanvas = ({ color = 'black', strokeWidth = 2, onClear, socket, room
         backgroundColor: 'white',
         cursor: 'crosshair',
         zIndex: 1,
-        border: '2px solid #ddd',
-        borderRadius: '8px',
       }}
     />
   );
