@@ -9,16 +9,12 @@ const RoomJoin = ({ onJoin }) => {
     if (!roomCode.trim()) return;
 
     try {
-      // ✅ Switch between local and production URLs
-      const apiURL =
-        process.env.REACT_APP_API_BASE_URL ||
-        'https://whiteboard-development.onrender.com';
-
+const apiURL = 'https://whiteboard-development.onrender.com';
       await axios.post(`${apiURL}/api/rooms/join`, { roomId: roomCode });
       onJoin(roomCode);
     } catch (err) {
-      console.error('Failed to join room:', err);
-      setError('Error joining room. Please try again.');
+      console.error('Failed to join room:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Error joining room. Please try again.');
     }
   };
 
